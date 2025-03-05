@@ -6,9 +6,10 @@ import io.embrace.android.embracesdk.network.EmbraceNetworkRequest
 import io.embrace.android.embracesdk.network.http.HttpMethod
 import io.embrace.lib.EmbraceAbrastraction
 import io.embrace.lib.OkhttpCapturedData
+import io.embrace.android.embracesdk.internal.*
 import kotlin.math.abs
 
-class EmbraceNetworkingInversionOfControl(val embrace: Embrace) {
+class EmbraceNetworkingInversionOfControl(val embrace: Embrace, val internalApi: EmbraceInternalApi) {
 
     val embraceAbrastraction: EmbraceAbrastraction
 
@@ -39,28 +40,28 @@ class EmbraceNetworkingInversionOfControl(val embrace: Embrace) {
                         url,
                         HttpMethod.fromString(httpMethod),
                         startTime + offset,
-                        embrace.internalInterface.getSdkCurrentTime(),
+                        embrace.getSdkCurrentTimeMs(),
                         errorType,
                         errorMessage,
                         traceId,
-                        if (embrace.internalInterface.isNetworkSpanForwardingEnabled()) w3cTraceparent else null,
+                        w3cTraceparent,
                         null
                     )
                 )
             },
             embrace::isStarted,
             {
-                val networkSpanForwardingEnabled = embrace.internalInterface.isNetworkSpanForwardingEnabled()
+                val networkSpanForwardingEnabled = internalApi.internalInterface.isNetworkSpanForwardingEnabled()
                 var traceparent: String? = null
                 if (networkSpanForwardingEnabled) {
                     traceparent = embrace.generateW3cTraceparent()
                 }
                 return@EmbraceAbrastraction traceparent
             },
-            embrace::traceIdHeader,
-            { message, details -> embrace.internalInterface.logInternalError(message, details) },
-            { throwable -> embrace.internalInterface.logInternalError(throwable) },
-            embrace.internalInterface::shouldCaptureNetworkBody
+            { EmbraceInternalApi.CUSTOM_TRACE_ID_HEADER_NAME },
+            { message, details -> internalApi.internalInterface.logInternalError(message, details) },
+            { throwable -> internalApi.internalInterface.logInternalError(throwable) },
+            internalApi.internalInterface::shouldCaptureNetworkBody
         )
     }
 
@@ -76,9 +77,9 @@ class EmbraceNetworkingInversionOfControl(val embrace: Embrace) {
         // Any difference that is greater than 1 ms is likely the result of a change to the system clock during this process, or some
         // scheduling quirk that makes the result not trustworthy. In that case, we simply don't return an offset.
 
-        val sdkTime1 = embrace.internalInterface.getSdkCurrentTime()
+        val sdkTime1 = embrace.getSdkCurrentTimeMs()
         val systemTime1 = System.currentTimeMillis()
-        val sdkTime2 = embrace.internalInterface.getSdkCurrentTime()
+        val sdkTime2 = embrace.getSdkCurrentTimeMs()
         val systemTime2 = System.currentTimeMillis()
 
         val diff1 = sdkTime1 - systemTime1

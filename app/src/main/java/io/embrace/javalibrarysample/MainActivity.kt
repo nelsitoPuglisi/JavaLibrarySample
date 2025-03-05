@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import io.embrace.android.embracesdk.Embrace
+import io.embrace.android.embracesdk.internal.EmbraceInternalApi
 import io.embrace.javalibrarysample.ui.theme.JavaLibrarySampleTheme
 import io.embrace.lib.Networking
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +37,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-private val emb = EmbraceNetworkingInversionOfControl(Embrace.getInstance())
+private val emb = EmbraceNetworkingInversionOfControl(Embrace.getInstance(), EmbraceInternalApi.getInstance())
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
